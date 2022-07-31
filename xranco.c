@@ -15,6 +15,8 @@
 
 */
 
+#define MAX_COLORS 9
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -34,7 +36,7 @@ static Display *display;
 static Window window, root;
 static unsigned int width, height;
 static int ncolors = 1;
-static struct color colors[9];
+static struct color colors[MAX_COLORS];
 static XFontStruct *font;
 static Atom wm_delete_window, wm_window_opacity;
 
@@ -213,9 +215,9 @@ match_opt(const char *in, const char *sh, const char *lo)
 }
 
 static int
-is_numeric_option(const char *in)
+match_numeric_opt(const char *in, int from, int to)
 {
-	return *in == '-' && *(in+1) > '0' && *(in+1) <= '9' && *(in+2) == '\0';
+	return *in == '-' && *(in+1) >= ('0' + from) && *(in+1) <= ('0' + to) && *(in+2) == '\0';
 }
 
 static inline void
@@ -249,7 +251,7 @@ main(int argc, char **argv)
 	if (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
-		else if (is_numeric_option(*argv)) ncolors = atoi(&(*argv)[1]);
+		else if (match_numeric_opt(*argv, 1, MAX_COLORS)) ncolors = atoi(&(*argv)[1]);
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}
