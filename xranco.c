@@ -229,10 +229,11 @@ print_opt(const char *sh, const char *lo, const char *desc)
 static void
 usage(void)
 {
-	puts("Usage: xranco [ -hv ]");
+	puts("Usage: xranco [ -hv123456789 ]");
 	puts("Options are:");
 	print_opt("-h", "--help", "display this message and exit");
 	print_opt("-v", "--version", "display the program version");
+	print_opt("-#", "", "generate specific number of colors");
 	exit(0);
 }
 
