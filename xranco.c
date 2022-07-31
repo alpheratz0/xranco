@@ -24,15 +24,17 @@
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
 
-#define BAR_HEIGHT 20
-#define DEFAULT_BAR_MESSAGE "Press SPACE to change color..."
+struct color {
+	GC bg, text;
+	unsigned long rgb;
+	char hex[64];
+};
 
 static Display *display;
 static Window window, root;
-static unsigned int width = 640, height = 480;
-static unsigned long color;
-static char bartext[128];
-static GC bg, fg, bar;
+static unsigned int width, height;
+static int ncolors = 1;
+static struct color colors[9];
 static XFontStruct *font;
 static Atom wm_delete_window, wm_window_opacity;
 
@@ -58,12 +60,15 @@ dief(const char *err, ...)
 static void
 create_window(void)
 {
+	int i;
 	unsigned char opacity[4];
 
 	if (NULL == (display = XOpenDisplay(NULL))) {
 		die("can't open display");
 	}
 
+	width = 640;
+	height = 480;
 	root = DefaultRootWindow(display);
 	window = XCreateSimpleWindow(display, root, 0, 0, width, height, 0, 0, 0);
 	wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", False);
@@ -79,54 +84,109 @@ create_window(void)
 		die("can't open font");
 	}
 
-	bg = XCreateGC(display, window, 0, NULL);
-	fg = XCreateGC(display, window, 0, NULL);
-	bar = XCreateGC(display, window, 0, NULL);
+	for (i = 0; i < ncolors; ++i) {
+		colors[i].rgb = rand() & 0xffffff;
+		colors[i].bg = XCreateGC(display, window, 0, NULL);
+		colors[i].text = XCreateGC(display, window, 0, NULL);
 
-	XSetFont(display, fg, font->fid);
-	XSetForeground(display, fg, 0x000000);
-	XSetForeground(display, bar, 0xffff00);
+		XSetForeground(display, colors[i].bg, colors[i].rgb);
+		XSetForeground(display, colors[i].text, 0x000000);
+		XSetFont(display, colors[i].text, font->fid);
+
+		snprintf(colors[i].hex, sizeof(colors[i].hex) - 1, "#%06x", (unsigned)(colors[i].rgb));
+	}
+
 	XMapWindow(display, window);
 }
 
 static void
 destroy_window(void)
 {
+	int i;
+
 	XUnloadFont(display, font->fid);
-	XFreeGC(display, fg);
-	XFreeGC(display, bg);
-	XFreeGC(display, bar);
+
+	for (i = 0; i < ncolors; ++i) {
+		XFreeGC(display, colors[i].bg);
+		XFreeGC(display, colors[i].text);
+	}
+
 	XCloseDisplay(display);
+}
+
+static int
+get_color_brightness(unsigned long color)
+{
+	double brightness;
+
+	brightness = 0.2126 * ((color >> 16) & 0xff) +
+		   0.7152 * ((color >> 8) & 0xff) +
+		   0.0722 * (color & 0xff);
+
+	return (int)(brightness);
 }
 
 static void
 h_keypress(XKeyEvent *ev)
 {
+	int i, from, to;
 	KeySym key;
 
 	key = XLookupKeysym(ev, 0);
 
 	switch (key) {
-		case XK_space:
-			color = rand() & 0xffffff;
-			snprintf(bartext, sizeof(bartext) - 1, "#%06x", (unsigned)(color));
-			XSetForeground(display, bg, color);
-			XClearArea(display, window, 0, 0, 1, 1, True);
+		case XK_1: case XK_2: case XK_3: case XK_4:
+		case XK_5: case XK_6: case XK_7: case XK_8:
+		case XK_9:
+			from = key - XK_1;
+			to = key - XK_1 + 1;
+
+			if (to > ncolors) {
+				to = ncolors;
+			}
 			break;
+		case XK_space:
+			from = 0;
+			to = ncolors;
+			break;
+		default:
+			return;
 	}
+
+	for (i = from; i < to; ++i) {
+		colors[i].rgb = rand() & 0xffffff;
+
+		XSetForeground(display, colors[i].bg, colors[i].rgb);
+		XSetForeground(
+			display, colors[i].text,
+			get_color_brightness(colors[i].rgb) < 50 ?
+				0xffffff :
+				0x000000
+		);
+
+		snprintf(colors[i].hex, sizeof(colors[i].hex) - 1, "#%06x", (unsigned)(colors[i].rgb));
+	}
+
+	XClearArea(display, window, 0, 0, 1, 1, True);
 }
 
 static void
 h_expose(XExposeEvent *ev)
 {
-	if (ev->count == 0) {
-		XFillRectangle(display, window, bg, 0, 0, width, height - BAR_HEIGHT);
-		XFillRectangle(display, window, bar, 0, height - BAR_HEIGHT, width, BAR_HEIGHT);
+	int i, cw, x;
 
-		XDrawString(
-			display, window, fg, (width - XTextWidth(font, bartext, strlen(bartext))) / 2,
-			height - (BAR_HEIGHT - font->ascent) / 2, bartext, strlen(bartext)
-		);
+	if (ev->count == 0) {
+		x = 0;
+		cw = width / ncolors;
+
+		for (i = 0; i < ncolors; ++i) {
+			XFillRectangle(display, window, colors[i].bg, x, 0, cw, height);
+			XDrawString(
+				display, window, colors[i].text, x + (cw - XTextWidth(font, colors[i].hex, strlen(colors[i].hex))) / 2,
+				(height + font->ascent) / 2, colors[i].hex, strlen(colors[i].hex)
+			);
+			x += cw;
+		}
 	}
 }
 
@@ -150,6 +210,12 @@ static int
 match_opt(const char *in, const char *sh, const char *lo)
 {
 	return (strcmp(in, sh) == 0) || (strcmp(in, lo) == 0);
+}
+
+static int
+is_numeric_option(const char *in)
+{
+	return *in == '-' && *(in+1) > '0' && *(in+1) <= '9' && *(in+2) == '\0';
 }
 
 static inline void
@@ -183,13 +249,13 @@ main(int argc, char **argv)
 	if (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
+		else if (is_numeric_option(*argv)) ncolors = atoi(&(*argv)[1]);
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}
 
-	create_window();
 	srand(getpid());
-	snprintf(bartext, sizeof(bartext) - 1, "%s", DEFAULT_BAR_MESSAGE);
+	create_window();
 
 	while (1) {
 		XNextEvent(display, &ev);
