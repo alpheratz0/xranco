@@ -139,10 +139,10 @@ h_keypress(XKeyEvent *ev)
 		case XK_5: case XK_6: case XK_7: case XK_8:
 		case XK_9:
 			from = key - XK_1;
-			to = key - XK_1 + 1;
+			to = from + 1;
 
 			if (to > ncolors) {
-				to = ncolors;
+				return;
 			}
 			break;
 		case XK_space:
