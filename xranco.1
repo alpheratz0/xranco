@@ -1,34 +1,27 @@
-.TH XRANCO 1 "July 28, 2022"
-.SH NAME
-xranco \- random color generator for X.
-.SH SYNOPSIS
-\fBxranco\fP [ -hv123456789 ]
-.SH OPTIONS
-.TP
-\fB\-h\fR, \fB\-\-help\fR
-show the help message and exit
-.TP
-\fB\-v\fR, \fB\-\-version\fR
+.Dd August 3, 2022
+.Dt XRANCO 1
+.Sh NAME
+.Nm xranco
+.Nd random color generator for X
+.Sh SYNOPSIS
+.Nm
+.Op Fl hv123456789
+.Sh DESCRIPTION
+The
+.Nm
+application lets you generate random colors.
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl h, -help
+show usage
+.It Fl v, -version
 display the program version
-.TP
-\fB\-123456789\fR
-generate specific number of colors
-.SH EXIT STATUS
-.TP
-\fB0\fR
-the program terminated successfully
-.TP
-\fB1\fR
-an error occurred
-.SH AUTHOR
-Written by alpheratz0.
-.SH COPYRIGHT
-Copyright \(co 2022 <alpheratz99@protonmail.com>
-.br
-License GPLv2.0: GNU GPL version 2.0 <https://gnu.org/licenses/old-licenses/gpl-2.0.en.html>.
-.br
-This is free software: you are free to change and redistribute it.
-.br
-There is NO WARRANTY, to the extent permitted by law.
-.SH BUGS
+.It Fl 1, 2, 3, 4, 5, 6, 7, 8, 9
+generate that specific number of colors
+.El
+.Sh SEE ALSO
+.Xr X 7
+.Sh AUTHORS
+.An alpheratz0 Aq Mt alpheratz99@protonmail.com
+.Sh BUGS
 https://github.com/alpheratz0/xranco/issues
