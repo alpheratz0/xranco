@@ -202,7 +202,13 @@ h_configure(XConfigureEvent *ev)
 static void
 h_client_message(XClientMessageEvent *ev)
 {
+	int i;
+
 	if ((Atom)(ev->data.l[0]) == wm_delete_window) {
+		for (i = 0; i < ncolors; ++i) {
+			printf("%s\n", colors[i].hex);
+		}
+
 		destroy_window();
 		exit(0);
 	}
