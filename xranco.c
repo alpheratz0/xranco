@@ -217,7 +217,10 @@ match_opt(const char *in, const char *sh, const char *lo)
 static int
 match_numeric_opt(const char *in, int from, int to)
 {
-	return *in == '-' && *(in+1) >= ('0' + from) && *(in+1) <= ('0' + to) && *(in+2) == '\0';
+	return in[0] == '-' &&
+		   in[1] >= ('0' + from) &&
+		   in[1] <= ('0' + to) &&
+		   in[2] == '\0';
 }
 
 static void
