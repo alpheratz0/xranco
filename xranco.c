@@ -13,6 +13,21 @@
 	this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 	Place, Suite 330, Boston, MA 02111-1307 USA
 
+	 _____________________________
+	( do you want a random color? )
+	 -----------------------------
+	 o
+	  o
+		 __
+		/  \
+		|  |
+		@  @
+		|  |
+		|| |/
+		|| ||
+		|\_/|
+		\___/
+
 */
 
 #define MAX_COLORS 9
