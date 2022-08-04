@@ -32,6 +32,7 @@
 
 #define MAX_COLORS 9
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -77,7 +78,6 @@ dief(const char *err, ...)
 static void
 create_window(void)
 {
-	int i;
 	unsigned char opacity[4];
 
 	if (NULL == (display = XOpenDisplay(NULL))) {
@@ -101,18 +101,6 @@ create_window(void)
 		die("can't open font");
 	}
 
-	for (i = 0; i < ncolors; ++i) {
-		colors[i].rgb = rand() & 0xffffff;
-		colors[i].bg = XCreateGC(display, window, 0, NULL);
-		colors[i].text = XCreateGC(display, window, 0, NULL);
-
-		XSetForeground(display, colors[i].bg, colors[i].rgb);
-		XSetForeground(display, colors[i].text, 0x000000);
-		XSetFont(display, colors[i].text, font->fid);
-
-		snprintf(colors[i].hex, sizeof(colors[i].hex) - 1, "#%06x", (unsigned)(colors[i].rgb));
-	}
-
 	XMapWindow(display, window);
 }
 
@@ -129,6 +117,56 @@ destroy_window(void)
 	}
 
 	XCloseDisplay(display);
+}
+
+static void
+create_palette(void)
+{
+	int i;
+
+	for (i = 0; i < ncolors; ++i) {
+		colors[i].rgb = rand() & 0xffffff;
+		colors[i].bg = XCreateGC(display, window, 0, NULL);
+		colors[i].text = XCreateGC(display, window, 0, NULL);
+
+		XSetForeground(display, colors[i].bg, colors[i].rgb);
+		XSetForeground(display, colors[i].text, 0x000000);
+		XSetFont(display, colors[i].text, font->fid);
+
+		snprintf(colors[i].hex, sizeof(colors[i].hex) - 1, "#%06x", (unsigned)(colors[i].rgb));
+	}
+}
+
+static void
+load_palette(const char *path)
+{
+	int i;
+	FILE *fp;
+
+	if (NULL == (fp = fopen(path, "r"))) {
+		dief("failed to open file %s: %s", path, strerror(errno));
+	}
+
+	for (i = 0; i < MAX_COLORS; ++i) {
+		if (fscanf(fp, "#%06lx\n", &colors[i].rgb) != 1) break;
+
+		colors[i].bg = XCreateGC(display, window, 0, NULL);
+		colors[i].text = XCreateGC(display, window, 0, NULL);
+
+		XSetForeground(display, colors[i].bg, colors[i].rgb);
+		XSetForeground(display, colors[i].text, 0x000000);
+		XSetFont(display, colors[i].text, font->fid);
+
+		snprintf(colors[i].hex, sizeof(colors[i].hex) - 1, "#%06x", (unsigned)(colors[i].rgb));
+	}
+
+	if (i == 0) {
+		die("invalid file format");
+	}
+
+	ncolors = i;
+
+	fclose(fp);
 }
 
 static int
@@ -247,7 +285,7 @@ match_numeric_opt(const char *in, int from, int to)
 static void
 usage(void)
 {
-	puts("usage: xranco [-hv123456789]");
+	puts("usage: xranco [-hlv123456789]");
 	exit(0);
 }
 
@@ -262,17 +300,22 @@ int
 main(int argc, char **argv)
 {
 	XEvent ev;
+	const char *loadpath = NULL;
 
 	if (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
 		else if (match_numeric_opt(*argv, 1, MAX_COLORS)) ncolors = atoi(&(*argv)[1]);
+		else if (match_opt(*argv, "-l", "--load") && --argc > 0) loadpath = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}
 
 	srand(getpid());
 	create_window();
+
+	if (NULL == loadpath) create_palette();
+	else load_palette(loadpath);
 
 	while (1) {
 		XNextEvent(display, &ev);
