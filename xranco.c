@@ -220,20 +220,10 @@ match_numeric_opt(const char *in, int from, int to)
 	return *in == '-' && *(in+1) >= ('0' + from) && *(in+1) <= ('0' + to) && *(in+2) == '\0';
 }
 
-static inline void
-print_opt(const char *sh, const char *lo, const char *desc)
-{
-	printf("%7s | %-25s %s\n", sh, lo, desc);
-}
-
 static void
 usage(void)
 {
-	puts("Usage: xranco [ -hv123456789 ]");
-	puts("Options are:");
-	print_opt("-h", "--help", "display this message and exit");
-	print_opt("-v", "--version", "display the program version");
-	print_opt("-#", "", "generate specific number of colors");
+	puts("usage: xranco [-hv123456789]");
 	exit(0);
 }
 
