@@ -205,7 +205,7 @@ h_keypress(XKeyEvent *ev)
 
 	if (key >= XK_1 && key < (XK_1 + (unsigned)(palette.count))) {
 		set_color(key - XK_1, rand() & 0xffffff);
-		XClearArea(display, window, 0, 0, 1, 1, True);
+		XClearArea(display, window, 0, 0, 0, 0, True);
 	}
 }
 
