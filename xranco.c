@@ -30,8 +30,6 @@
 
 */
 
-#define MAX_COLORS 9
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,17 +40,24 @@
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
 
+#define MAX_COLORS           (9)
+#define HEX_STR_LEN          (sizeof("#000000") - 1)
+
 struct color {
 	GC bg, text;
 	unsigned long rgb;
 	char hex[64];
 };
 
+struct palette {
+	int count;
+	struct color colors[MAX_COLORS];
+};
+
 static Display *display;
 static Window window, root;
 static unsigned int width, height;
-static int ncolors = 1;
-static struct color colors[MAX_COLORS];
+static struct palette palette;
 static XFontStruct *font;
 static Atom wm_delete_window, wm_window_opacity;
 
@@ -79,28 +84,28 @@ dief(const char *fmt, ...)
 static void
 create_window(void)
 {
-	unsigned char opacity[4];
-
 	if (NULL == (display = XOpenDisplay(NULL))) {
 		die("can't open display");
 	}
 
-	width = 640;
-	height = 480;
+	if (NULL == (font = XLoadQueryFont(display, "fixed"))) {
+		die("can't open font");
+	}
+
+	width = height = 600;
 	root = DefaultRootWindow(display);
 	window = XCreateSimpleWindow(display, root, 0, 0, width, height, 0, 0, 0);
 	wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", False);
 	wm_window_opacity = XInternAtom(display, "_NET_WM_WINDOW_OPACITY", False);
-	opacity[0] = opacity[1] = opacity[2] = opacity[3] = 0xff;
 
 	XStoreName(display, window, "xranco");
 	XSelectInput(display, window, ExposureMask | KeyPressMask | StructureNotifyMask);
 	XSetWMProtocols(display, window, &wm_delete_window, 1);
-	XChangeProperty(display, window, wm_window_opacity, XA_CARDINAL, 32, PropModeReplace, opacity, 1);
 
-	if (NULL == (font = XLoadQueryFont(display, "fixed"))) {
-		die("can't open font");
-	}
+	XChangeProperty(
+		display, window, wm_window_opacity, XA_CARDINAL, 32,
+		PropModeReplace, (const unsigned char[]) { 0xff, 0xff, 0xff, 0xff }, 1
+	);
 
 	XMapWindow(display, window);
 }
@@ -108,140 +113,118 @@ create_window(void)
 static void
 destroy_window(void)
 {
-	int i;
-
 	XUnloadFont(display, font->fid);
 
-	for (i = 0; i < ncolors; ++i) {
-		XFreeGC(display, colors[i].bg);
-		XFreeGC(display, colors[i].text);
+	while (--palette.count >= 0) {
+		XFreeGC(display, palette.colors[palette.count].bg);
+		XFreeGC(display, palette.colors[palette.count].text);
 	}
 
 	XCloseDisplay(display);
 }
 
-static void
-create_palette(void)
+static inline int
+get_color_brightness(unsigned long color)
 {
-	int i;
+	return (int)(
+		0.2126 * ((color >> 16) & 0xff) +
+		0.7152 * ((color >> 8) & 0xff) +
+		0.0722 * (color & 0xff)
+	);
+}
 
-	for (i = 0; i < ncolors; ++i) {
-		colors[i].rgb = rand() & 0xffffff;
-		colors[i].bg = XCreateGC(display, window, 0, NULL);
-		colors[i].text = XCreateGC(display, window, 0, NULL);
+static void
+set_color(int idx, unsigned long color)
+{
+	struct color *c;
 
-		XSetForeground(display, colors[i].bg, colors[i].rgb);
-		XSetForeground(display, colors[i].text, 0x000000);
-		XSetFont(display, colors[i].text, font->fid);
+	c = &palette.colors[idx];
+	c->rgb = color;
 
-		snprintf(colors[i].hex, sizeof(colors[i].hex) - 1, "#%06x", (unsigned)(colors[i].rgb));
+	XSetForeground(display, c->bg, color);
+
+	XSetForeground(
+		display, c->text,
+		get_color_brightness(color) < 50 ?
+			0xffffff :
+			0x000000
+	);
+
+	snprintf(c->hex, sizeof(c->hex) - 1, "#%06lx", color);
+}
+
+static void
+add_color(unsigned long color)
+{
+	struct color *c;
+
+	c = &palette.colors[palette.count++];
+	c->bg = XCreateGC(display, window, 0, NULL);
+	c->text = XCreateGC(display, window, 0, NULL);
+
+	XSetFont(display, c->text, font->fid);
+
+	set_color(palette.count - 1, color);
+}
+
+static void
+create_palette(int count)
+{
+	while (--count >= 0) {
+		add_color(rand() & 0xffffff);
 	}
 }
 
 static void
 load_palette(const char *path)
 {
-	int i;
 	FILE *fp;
+	unsigned long color;
 
 	if (NULL == (fp = fopen(path, "r"))) {
 		dief("failed to open file %s: %s", path, strerror(errno));
 	}
 
-	for (i = 0; i < MAX_COLORS; ++i) {
-		if (fscanf(fp, "#%06lx\n", &colors[i].rgb) != 1) break;
-
-		colors[i].bg = XCreateGC(display, window, 0, NULL);
-		colors[i].text = XCreateGC(display, window, 0, NULL);
-
-		XSetForeground(display, colors[i].bg, colors[i].rgb);
-		XSetForeground(display, colors[i].text, 0x000000);
-		XSetFont(display, colors[i].text, font->fid);
-
-		snprintf(colors[i].hex, sizeof(colors[i].hex) - 1, "#%06x", (unsigned)(colors[i].rgb));
+	while (palette.count < MAX_COLORS && fscanf(fp, "#%06lx\n", &color) == 1) {
+		add_color(color & 0xffffff);
 	}
 
-	if (i == 0) {
+	if (palette.count == 0) {
 		die("invalid file format");
 	}
 
-	ncolors = i;
-
 	fclose(fp);
-}
-
-static int
-get_color_brightness(unsigned long color)
-{
-	double brightness;
-
-	brightness = 0.2126 * ((color >> 16) & 0xff) +
-		   0.7152 * ((color >> 8) & 0xff) +
-		   0.0722 * (color & 0xff);
-
-	return (int)(brightness);
 }
 
 static void
 h_keypress(XKeyEvent *ev)
 {
-	int i, from, to;
 	KeySym key;
 
 	key = XLookupKeysym(ev, 0);
 
-	switch (key) {
-		case XK_1: case XK_2: case XK_3: case XK_4:
-		case XK_5: case XK_6: case XK_7: case XK_8:
-		case XK_9:
-			from = key - XK_1;
-			to = from + 1;
-
-			if (to > ncolors) {
-				return;
-			}
-			break;
-		case XK_space:
-			from = 0;
-			to = ncolors;
-			break;
-		default:
-			return;
+	if (key >= XK_1 && key < (XK_1 + (unsigned)(palette.count))) {
+		set_color(key - XK_1, rand() & 0xffffff);
+		XClearArea(display, window, 0, 0, 1, 1, True);
 	}
-
-	for (i = from; i < to; ++i) {
-		colors[i].rgb = rand() & 0xffffff;
-
-		XSetForeground(display, colors[i].bg, colors[i].rgb);
-		XSetForeground(
-			display, colors[i].text,
-			get_color_brightness(colors[i].rgb) < 50 ?
-				0xffffff :
-				0x000000
-		);
-
-		snprintf(colors[i].hex, sizeof(colors[i].hex) - 1, "#%06x", (unsigned)(colors[i].rgb));
-	}
-
-	XClearArea(display, window, 0, 0, 1, 1, True);
 }
 
 static void
 h_expose(XExposeEvent *ev)
 {
-	int i, cw, x;
+	struct color *c;
+	int i, cw, tx, ty;
 
 	if (ev->count == 0) {
-		x = 0;
-		cw = width / ncolors;
+		cw = width / palette.count;
+		tx = (cw - XTextWidth(font, "0", 1) * HEX_STR_LEN) / 2;
+		ty = (height + font->ascent) / 2;
 
-		for (i = 0; i < ncolors; ++i) {
-			XFillRectangle(display, window, colors[i].bg, x, 0, cw, height);
-			XDrawString(
-				display, window, colors[i].text, x + (cw - XTextWidth(font, colors[i].hex, strlen(colors[i].hex))) / 2,
-				(height + font->ascent) / 2, colors[i].hex, strlen(colors[i].hex)
-			);
-			x += cw;
+		for (i = 0; i < palette.count; ++i, tx += cw) {
+			c = &palette.colors[i];
+
+			XFillRectangle(display, window, c->bg, cw * i, 0, cw, height);
+			XDrawString(display, window, c->text, tx, ty, c->hex, HEX_STR_LEN);
 		}
 	}
 }
@@ -249,7 +232,7 @@ h_expose(XExposeEvent *ev)
 static void
 h_configure(XConfigureEvent *ev)
 {
-	width  = ev->width;
+	width = ev->width;
 	height = ev->height;
 }
 
@@ -259,8 +242,8 @@ h_client_message(XClientMessageEvent *ev)
 	int i;
 
 	if ((Atom)(ev->data.l[0]) == wm_delete_window) {
-		for (i = 0; i < ncolors; ++i) {
-			printf("%s\n", colors[i].hex);
+		for (i = 0; i < palette.count; ++i) {
+			printf("%s\n", palette.colors[i].hex);
 		}
 
 		destroy_window();
@@ -301,6 +284,7 @@ int
 main(int argc, char **argv)
 {
 	XEvent ev;
+	int ncolors = 1;
 	const char *loadpath = NULL;
 
 	if (++argv, --argc > 0) {
@@ -315,7 +299,7 @@ main(int argc, char **argv)
 	srand(getpid());
 	create_window();
 
-	if (NULL == loadpath) create_palette();
+	if (NULL == loadpath) create_palette(ncolors);
 	else load_palette(loadpath);
 
 	while (1) {
