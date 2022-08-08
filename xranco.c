@@ -252,12 +252,6 @@ h_client_message(XClientMessageEvent *ev)
 }
 
 static int
-match_opt(const char *in, const char *sh, const char *lo)
-{
-	return (strcmp(in, sh) == 0) || (strcmp(in, lo) == 0);
-}
-
-static int
 match_numeric_opt(const char *in, int from, int to)
 {
 	return in[0] == '-' &&
@@ -288,10 +282,10 @@ main(int argc, char **argv)
 	const char *loadpath = NULL;
 
 	if (++argv, --argc > 0) {
-		if (match_opt(*argv, "-h", "--help")) usage();
-		else if (match_opt(*argv, "-v", "--version")) version();
+		if (!strcmp(*argv, "-h")) usage();
+		else if (!strcmp(*argv, "-v")) version();
+		else if (!strcmp(*argv, "-l")) --argc, loadpath = *++argv;
 		else if (match_numeric_opt(*argv, 1, MAX_COLORS)) ncolors = atoi(&(*argv)[1]);
-		else if (match_opt(*argv, "-l", "--load") && --argc > 0) loadpath = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}
