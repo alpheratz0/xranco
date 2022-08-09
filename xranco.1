@@ -26,22 +26,21 @@ load palette from file
 .Bl -tag -width indent
 .It preview a color
 echo '#fe8f3a' | xranco -l /dev/stdin
+.It pick a color from the screen and preview it
+xcpick -H | xranco -l /dev/stdin
 .El
 .Sh PALETTE FORMAT
-.Bl -tag -width indent
-.It sample palette file
-#199fef
-.br
-#e2cb97
-.br
-#e9e2ab
-.br
-#fe8f3a
-.br
-#cff501
-.El
+.Bd -literal -offset left
+Here is an example of a palette file:
+	#199fef
+	#e2cb97
+	#e9e2ab
+	#fe8f3a
+	#cff501
+.Ed
 .Sh SEE ALSO
 .Xr X 7
+.Xr xcpick 1
 .Sh AUTHORS
 .An alpheratz0 Aq Mt alpheratz99@protonmail.com
 .Sh BUGS
