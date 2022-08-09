@@ -81,6 +81,16 @@ dief(const char *fmt, ...)
 	exit(1);
 }
 
+static const char *
+enotnull(const char *str, const char *name)
+{
+	if (NULL == str) {
+		dief("%s cannot be null", name);
+	}
+
+	return str;
+}
+
 static void
 create_window(void)
 {
@@ -263,7 +273,7 @@ match_numeric_opt(const char *in, int from, int to)
 static void
 usage(void)
 {
-	puts("usage: xranco [-hlv123456789]");
+	puts("usage: xranco [-hv123456789] [-l palette_file]");
 	exit(0);
 }
 
@@ -284,7 +294,7 @@ main(int argc, char **argv)
 	if (++argv, --argc > 0) {
 		if (!strcmp(*argv, "-h")) usage();
 		else if (!strcmp(*argv, "-v")) version();
-		else if (!strcmp(*argv, "-l")) --argc, loadpath = *++argv;
+		else if (!strcmp(*argv, "-l")) --argc, loadpath = enotnull(*++argv, "path");
 		else if (match_numeric_opt(*argv, 1, MAX_COLORS)) ncolors = atoi(&(*argv)[1]);
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
