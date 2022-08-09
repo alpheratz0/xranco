@@ -1,11 +1,12 @@
-.Dd August 8, 2022
+.Dd August 9, 2022
 .Dt XRANCO 1
 .Sh NAME
 .Nm xranco
 .Nd random color generator for X
 .Sh SYNOPSIS
 .Nm
-.Op Fl hlv123456789
+.Op Fl hv123456789
+.Op Fl l Ar palette_file
 .Sh DESCRIPTION
 The
 .Nm
@@ -14,12 +15,12 @@ application lets you generate 1 to 9 random colors and regenerate a specific col
 .Bl -tag -width indent
 .It Fl h
 show usage
-.It Fl l
-load palette from file
 .It Fl v
 display the program version
-.It Fl 1, 2, 3, 4, 5, 6, 7, 8, 9
+.It Fl #
 generate that specific number of colors
+.It Fl l
+load palette from file
 .El
 .Sh EXAMPLES
 .Bl -tag -width indent
