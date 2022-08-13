@@ -160,7 +160,7 @@ set_color(int idx, unsigned long color)
 			0x000000
 	);
 
-	snprintf(c->hex, sizeof(c->hex) - 1, "#%06lx", color);
+	snprintf(c->hex, sizeof(c->hex), "#%06lx", color);
 }
 
 static void
