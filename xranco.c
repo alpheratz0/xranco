@@ -49,6 +49,15 @@ struct color {
 	char hex[64];
 };
 
+struct point {
+	int x, y;
+};
+
+struct rectangle {
+	int x, y;
+	int width, height;
+};
+
 struct palette {
 	int count;
 	struct color colors[MAX_COLORS];
@@ -223,18 +232,25 @@ static void
 h_expose(XExposeEvent *ev)
 {
 	struct color *c;
-	int i, cw, tx, ty;
+	struct rectangle box = { 0 };
+	struct point tpos = { 0 };
+	int i, wavail;
 
 	if (ev->count == 0) {
-		cw = width / palette.count;
-		tx = (cw - XTextWidth(font, "0", 1) * HEX_STR_LEN) / 2;
-		ty = (height + font->ascent) / 2;
+		wavail = width;
+		tpos.y = (height + font->ascent) / 2;
+		box.height = height;
 
-		for (i = 0; i < palette.count; ++i, tx += cw) {
+		for (i = 0; i < palette.count; ++i) {
+			box.x += box.width;
+			box.width = wavail / (palette.count - i);
+			tpos.x = box.x + (box.width - XTextWidth(font, "0", 1) * HEX_STR_LEN) / 2;
+			wavail -= box.width;
+
 			c = &palette.colors[i];
 
-			XFillRectangle(display, window, c->bg, cw * i, 0, cw, height);
-			XDrawString(display, window, c->text, tx, ty, c->hex, HEX_STR_LEN);
+			XFillRectangle(display, window, c->bg, box.x, box.y, box.width, box.height);
+			XDrawString(display, window, c->text, tpos.x, tpos.y, c->hex, HEX_STR_LEN);
 		}
 	}
 }
