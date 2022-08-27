@@ -311,7 +311,7 @@ main(int argc, char **argv)
 		if (!strcmp(*argv, "-h")) usage();
 		else if (!strcmp(*argv, "-v")) version();
 		else if (!strcmp(*argv, "-l")) --argc, loadpath = enotnull(*++argv, "path");
-		else if (match_numeric_opt(*argv, 1, MAX_COLORS)) ncolors = atoi(&(*argv)[1]);
+		else if (match_numeric_opt(*argv, 1, MAX_COLORS)) ncolors = atoi(*argv+1);
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}
