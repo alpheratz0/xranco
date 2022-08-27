@@ -93,23 +93,19 @@ dief(const char *fmt, ...)
 static const char *
 enotnull(const char *str, const char *name)
 {
-	if (NULL == str) {
+	if (NULL == str)
 		dief("%s cannot be null", name);
-	}
-
 	return str;
 }
 
 static void
 create_window(void)
 {
-	if (NULL == (display = XOpenDisplay(NULL))) {
+	if (NULL == (display = XOpenDisplay(NULL)))
 		die("can't open display");
-	}
 
-	if (NULL == (font = XLoadQueryFont(display, "fixed"))) {
+	if (NULL == (font = XLoadQueryFont(display, "fixed")))
 		die("can't open font");
-	}
 
 	width = height = 600;
 	root = DefaultRootWindow(display);
@@ -200,17 +196,14 @@ load_palette(const char *path)
 	FILE *fp;
 	unsigned long color;
 
-	if (NULL == (fp = fopen(path, "r"))) {
+	if (NULL == (fp = fopen(path, "r")))
 		dief("failed to open file %s: %s", path, strerror(errno));
-	}
 
-	while (palette.count < MAX_COLORS && fscanf(fp, "#%06lx\n", &color) == 1) {
+	while (palette.count < MAX_COLORS && fscanf(fp, "#%06lx\n", &color) == 1)
 		add_color(color & 0xffffff);
-	}
 
-	if (palette.count == 0) {
+	if (palette.count == 0)
 		die("invalid file format");
-	}
 
 	fclose(fp);
 }
@@ -236,22 +229,23 @@ h_expose(XExposeEvent *ev)
 	struct point tpos = { 0 };
 	int i, wavail;
 
-	if (ev->count == 0) {
-		wavail = width;
-		tpos.y = (height + font->ascent) / 2;
-		box.height = height;
+	if (ev->count != 0)
+		return;
 
-		for (i = 0; i < palette.count; ++i) {
-			box.x += box.width;
-			box.width = wavail / (palette.count - i);
-			tpos.x = box.x + (box.width - XTextWidth(font, "0", 1) * HEX_STR_LEN) / 2;
-			wavail -= box.width;
+	wavail = width;
+	tpos.y = (height + font->ascent) / 2;
+	box.height = height;
 
-			c = &palette.colors[i];
+	for (i = 0; i < palette.count; ++i) {
+		box.x += box.width;
+		box.width = wavail / (palette.count - i);
+		tpos.x = box.x + (box.width - XTextWidth(font, "0", 1) * HEX_STR_LEN) / 2;
+		wavail -= box.width;
 
-			XFillRectangle(display, window, c->bg, box.x, box.y, box.width, box.height);
-			XDrawString(display, window, c->text, tpos.x, tpos.y, c->hex, HEX_STR_LEN);
-		}
+		c = &palette.colors[i];
+
+		XFillRectangle(display, window, c->bg, box.x, box.y, box.width, box.height);
+		XDrawString(display, window, c->text, tpos.x, tpos.y, c->hex, HEX_STR_LEN);
 	}
 }
 
@@ -268,10 +262,8 @@ h_client_message(XClientMessageEvent *ev)
 	int i;
 
 	if ((Atom)(ev->data.l[0]) == wm_delete_window) {
-		for (i = 0; i < palette.count; ++i) {
+		for (i = 0; i < palette.count; ++i)
 			printf("%s\n", palette.colors[i].hex);
-		}
-
 		destroy_window();
 		exit(0);
 	}
@@ -326,20 +318,13 @@ main(int argc, char **argv)
 		XNextEvent(display, &ev);
 
 		switch (ev.type) {
-			case ClientMessage:
-				h_client_message(&ev.xclient);
-				break;
-			case Expose:
-				h_expose(&ev.xexpose);
-				break;
-			case ConfigureNotify:
-				h_configure(&ev.xconfigure);
-				break;
-			case KeyPress:
-				h_keypress(&ev.xkey);
-				break;
+			case ClientMessage: h_client_message(&ev.xclient); break;
+			case Expose: h_expose(&ev.xexpose); break;
+			case ConfigureNotify: h_configure(&ev.xconfigure); break;
+			case KeyPress: h_keypress(&ev.xkey); break;
 		}
 	}
 
+	/* UNREACHABLE */
 	return 0;
 }
