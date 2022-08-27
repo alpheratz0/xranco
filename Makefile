@@ -1,15 +1,7 @@
 .POSIX:
 .PHONY: all clean install uninstall dist
 
-VERSION = 0.1.0
-
-CC      = cc
-CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Os -DVERSION=\"$(VERSION)\"
-LDLIBS  = -lX11
-LDFLAGS = -s
-
-PREFIX    = /usr/local
-MANPREFIX = $(PREFIX)/share/man
+include config.mk
 
 all: xranco
 
@@ -29,7 +21,7 @@ install: all
 
 dist: clean
 	mkdir -p xranco-$(VERSION)
-	cp -R COPYING Makefile README xranco.1 xranco.c xranco-$(VERSION)
+	cp -R COPYING config.mk Makefile README xranco.1 xranco.c xranco-$(VERSION)
 	tar -cf xranco-$(VERSION).tar xranco-$(VERSION)
 	gzip xranco-$(VERSION).tar
 	rm -rf xranco-$(VERSION)
