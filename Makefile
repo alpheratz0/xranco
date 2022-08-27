@@ -29,7 +29,7 @@ install: all
 
 dist: clean
 	mkdir -p xranco-$(VERSION)
-	cp -R LICENSE Makefile README xranco.1 xranco.c xranco-$(VERSION)
+	cp -R COPYING Makefile README xranco.1 xranco.c xranco-$(VERSION)
 	tar -cf xranco-$(VERSION).tar xranco-$(VERSION)
 	gzip xranco-$(VERSION).tar
 	rm -rf xranco-$(VERSION)
