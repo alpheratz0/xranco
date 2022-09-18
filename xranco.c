@@ -71,14 +71,7 @@ static XFontStruct *font;
 static Atom wm_delete_window, wm_window_opacity;
 
 static void
-die(const char *err)
-{
-	fprintf(stderr, "xranco: %s\n", err);
-	exit(1);
-}
-
-static void
-dief(const char *fmt, ...)
+die(const char *fmt, ...)
 {
 	va_list args;
 
@@ -94,7 +87,7 @@ static const char *
 enotnull(const char *str, const char *name)
 {
 	if (NULL == str)
-		dief("%s cannot be null", name);
+		die("%s cannot be null", name);
 	return str;
 }
 
@@ -197,7 +190,7 @@ load_palette(const char *path)
 	unsigned long color;
 
 	if (NULL == (fp = fopen(path, "r")))
-		dief("failed to open file %s: %s", path, strerror(errno));
+		die("failed to open file %s: %s", path, strerror(errno));
 
 	while (palette.count < MAX_COLORS && fscanf(fp, "#%06lx\n", &color) == 1)
 		add_color(color & 0xffffff);
@@ -296,16 +289,19 @@ int
 main(int argc, char **argv)
 {
 	XEvent ev;
-	int ncolors = 1;
-	const char *loadpath = NULL;
+	int ncolors;
+	const char *loadpath;
+
+	ncolors = 1;
+	loadpath = NULL;
 
 	if (++argv, --argc > 0) {
 		if (!strcmp(*argv, "-h")) usage();
 		else if (!strcmp(*argv, "-v")) version();
 		else if (!strcmp(*argv, "-l")) --argc, loadpath = enotnull(*++argv, "path");
 		else if (match_numeric_opt(*argv, 1, MAX_COLORS)) ncolors = atoi(*argv+1);
-		else if (**argv == '-') dief("invalid option %s", *argv);
-		else dief("unexpected argument: %s", *argv);
+		else if (**argv == '-') die("invalid option %s", *argv);
+		else die("unexpected argument: %s", *argv);
 	}
 
 	srand(getpid());
@@ -316,7 +312,6 @@ main(int argc, char **argv)
 
 	while (1) {
 		XNextEvent(display, &ev);
-
 		switch (ev.type) {
 			case ClientMessage: h_client_message(&ev.xclient); break;
 			case Expose: h_expose(&ev.xexpose); break;
