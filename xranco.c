@@ -178,9 +178,8 @@ add_color(unsigned long color)
 static void
 create_palette(int count)
 {
-	while (--count >= 0) {
+	while (--count >= 0)
 		add_color(rand() & 0xffffff);
-	}
 }
 
 static void
