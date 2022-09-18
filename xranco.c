@@ -262,19 +262,10 @@ h_client_message(XClientMessageEvent *ev)
 	}
 }
 
-static int
-match_numeric_opt(const char *in, int from, int to)
-{
-	return in[0] == '-' &&
-		   in[1] >= ('0' + from) &&
-		   in[1] <= ('0' + to) &&
-		   in[2] == '\0';
-}
-
 static void
 usage(void)
 {
-	puts("usage: xranco [-hv123456789] [-l palette_file]");
+	puts("usage: xranco [-hv] [-l palette_file] [-n ncolors]");
 	exit(0);
 }
 
@@ -295,13 +286,18 @@ main(int argc, char **argv)
 	ncolors = 1;
 	loadpath = NULL;
 
-	if (++argv, --argc > 0) {
-		if (!strcmp(*argv, "-h")) usage();
-		else if (!strcmp(*argv, "-v")) version();
-		else if (!strcmp(*argv, "-l")) --argc, loadpath = enotnull(*++argv, "path");
-		else if (match_numeric_opt(*argv, 1, MAX_COLORS)) ncolors = atoi(*argv+1);
-		else if (**argv == '-') die("invalid option %s", *argv);
-		else die("unexpected argument: %s", *argv);
+	while (++argv, --argc > 0) {
+		if ((*argv)[0] == '-' && (*argv)[1] != '\0' && (*argv)[2] == '\0') {
+			switch ((*argv)[1]) {
+				case 'h': usage(); break;
+				case 'v': version(); break;
+				case 'l': --argc, loadpath = enotnull(*++argv, "path"); break;
+				case 'n': --argc; ncolors = atoi(enotnull(*++argv, "ncolors")); break;
+				default: die("invalid option %s", *argv); break;
+			}
+		} else {
+			die("unexpected argument: %s", *argv);
+		}
 	}
 
 	srand(getpid());
