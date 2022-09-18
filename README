@@ -1,13 +1,8 @@
-]|~ xranco ~|[
+xranco is a random color generator for X.
+For more information about it's usage check `man xranco`.
 
-Random color generator for X.
-
-]|~ build ~|[
-
-In order to build xranco you will need X11 headers.
-$ make
-
-]|~ license ~|[
+This program requires libX11 to be installed.
+In order to build this program you need to run `make`.
 
 This program is free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License
