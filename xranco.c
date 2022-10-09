@@ -290,7 +290,7 @@ main(int argc, char **argv)
 			switch ((*argv)[1]) {
 				case 'h': usage(); break;
 				case 'v': version(); break;
-				case 'l': --argc, loadpath = enotnull(*++argv, "path"); break;
+				case 'l': --argc; loadpath = enotnull(*++argv, "path"); break;
 				case 'n': --argc; ncolors = atoi(enotnull(*++argv, "ncolors")); break;
 				default: die("invalid option %s", *argv); break;
 			}
@@ -308,10 +308,10 @@ main(int argc, char **argv)
 	while (1) {
 		XNextEvent(display, &ev);
 		switch (ev.type) {
-			case ClientMessage: h_client_message(&ev.xclient); break;
-			case Expose: h_expose(&ev.xexpose); break;
-			case ConfigureNotify: h_configure(&ev.xconfigure); break;
-			case KeyPress: h_keypress(&ev.xkey); break;
+			case ClientMessage:     h_client_message(&ev.xclient); break;
+			case Expose:            h_expose(&ev.xexpose); break;
+			case ConfigureNotify:   h_configure(&ev.xconfigure); break;
+			case KeyPress:          h_keypress(&ev.xkey); break;
 		}
 	}
 
