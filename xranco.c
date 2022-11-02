@@ -68,7 +68,6 @@ static Window window, root;
 static unsigned int width, height;
 static struct palette palette;
 static XFontStruct *font;
-static Atom wm_delete_window, wm_window_opacity;
 
 static void
 die(const char *fmt, ...)
@@ -94,6 +93,8 @@ enotnull(const char *str, const char *name)
 static void
 create_window(void)
 {
+	Atom wm_delete_window, wm_window_opacity;
+
 	if (NULL == (display = XOpenDisplay(NULL)))
 		die("can't open display");
 
@@ -253,7 +254,7 @@ h_client_message(XClientMessageEvent *ev)
 {
 	int i;
 
-	if ((Atom)(ev->data.l[0]) == wm_delete_window) {
+	if ((Atom)(ev->data.l[0]) == XInternAtom(display, "WM_DELETE_WINDOW", False)) {
 		for (i = 0; i < palette.count; ++i)
 			printf("%s\n", palette.colors[i].hex);
 		destroy_window();
