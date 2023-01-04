@@ -40,13 +40,19 @@
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
 
-#define MAX_COLORS           (9)
-#define HEX_STR_LEN          (sizeof("#000000") - 1)
+#define MAX_COLORS (9)
+#define HEX_STR_LEN (sizeof("#000000") - 1)
+#define LEN(arr) (sizeof(arr) / sizeof(arr[0]))
+#define XATOM(name) (XInternAtom(display, name, False))
+
+/* x11 atoms */
+#define WM_DELETE_WINDOW               XATOM("WM_DELETE_WINDOW")
+#define _NET_WM_WINDOW_OPACITY         XATOM("_NET_WM_WINDOW_OPACITY")
 
 struct color {
 	GC bg, text;
 	unsigned long rgb;
-	char hex[64];
+	char hex[HEX_STR_LEN+1];
 };
 
 struct point {
@@ -93,7 +99,7 @@ enotnull(const char *str, const char *name)
 static void
 create_window(void)
 {
-	Atom wm_delete_window, wm_window_opacity;
+	Atom protocols[1];
 
 	if (NULL == (display = XOpenDisplay(NULL)))
 		die("can't open display");
@@ -104,15 +110,14 @@ create_window(void)
 	width = height = 600;
 	root = DefaultRootWindow(display);
 	window = XCreateSimpleWindow(display, root, 0, 0, width, height, 0, 0, 0);
-	wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", False);
-	wm_window_opacity = XInternAtom(display, "_NET_WM_WINDOW_OPACITY", False);
+	protocols[0] = WM_DELETE_WINDOW;
 
 	XStoreName(display, window, "xranco");
 	XSelectInput(display, window, ExposureMask | KeyPressMask | StructureNotifyMask);
-	XSetWMProtocols(display, window, &wm_delete_window, 1);
+	XSetWMProtocols(display, window, protocols, LEN(protocols));
 
 	XChangeProperty(
-		display, window, wm_window_opacity, XA_CARDINAL, 32,
+		display, window, _NET_WM_WINDOW_OPACITY, XA_CARDINAL, 32,
 		PropModeReplace, (const unsigned char[]) { 0xff, 0xff, 0xff, 0xff }, 1
 	);
 
@@ -137,8 +142,8 @@ get_color_brightness(unsigned long color)
 {
 	return (int)(
 		0.2126 * ((color >> 16) & 0xff) +
-		0.7152 * ((color >> 8) & 0xff) +
-		0.0722 * (color & 0xff)
+		0.7152 * ((color >>  8) & 0xff) +
+		0.0722 * ((color >>  0) & 0xff)
 	);
 }
 
@@ -159,7 +164,7 @@ set_color(int idx, unsigned long color)
 			0x000000
 	);
 
-	snprintf(c->hex, sizeof(c->hex), "#%06lx", color);
+	snprintf(c->hex, LEN(c->hex), "#%06lx", color);
 }
 
 static void
@@ -254,7 +259,7 @@ h_client_message(XClientMessageEvent *ev)
 {
 	int i;
 
-	if ((Atom)(ev->data.l[0]) == XInternAtom(display, "WM_DELETE_WINDOW", False)) {
+	if ((Atom)(ev->data.l[0]) == WM_DELETE_WINDOW) {
 		for (i = 0; i < palette.count; ++i)
 			printf("%s\n", palette.colors[i].hex);
 		destroy_window();
