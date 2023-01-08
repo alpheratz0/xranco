@@ -49,30 +49,30 @@
 #define WM_DELETE_WINDOW               XATOM("WM_DELETE_WINDOW")
 #define _NET_WM_WINDOW_OPACITY         XATOM("_NET_WM_WINDOW_OPACITY")
 
-struct color {
+struct Color {
 	GC bg, text;
 	unsigned long rgb;
 	char hex[HEX_STR_LEN+1];
 };
 
-struct point {
+struct Point {
 	int x, y;
 };
 
-struct rectangle {
+struct Rectangle {
 	int x, y;
 	int width, height;
 };
 
-struct palette {
+struct Palette {
 	int count;
-	struct color colors[MAX_COLORS];
+	struct Color colors[MAX_COLORS];
 };
 
 static Display *display;
 static Window window, root;
 static unsigned int width, height;
-static struct palette palette;
+static struct Palette palette;
 static XFontStruct *font;
 
 static void
@@ -150,7 +150,7 @@ get_color_brightness(unsigned long color)
 static void
 set_color(int idx, unsigned long color)
 {
-	struct color *c;
+	struct Color *c;
 
 	c = &palette.colors[idx];
 	c->rgb = color;
@@ -170,7 +170,7 @@ set_color(int idx, unsigned long color)
 static void
 add_color(unsigned long color)
 {
-	struct color *c;
+	struct Color *c;
 
 	c = &palette.colors[palette.count++];
 	c->bg = XCreateGC(display, window, 0, NULL);
@@ -222,9 +222,9 @@ h_keypress(XKeyEvent *ev)
 static void
 h_expose(XExposeEvent *ev)
 {
-	struct color *c;
-	struct rectangle box = { 0 };
-	struct point tpos = { 0 };
+	struct Color *c;
+	struct Rectangle box = { 0 };
+	struct Point tpos = { 0 };
 	int i, wavail;
 
 	if (ev->count != 0)
