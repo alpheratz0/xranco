@@ -246,7 +246,7 @@ h_expose(XExposeEvent *ev)
 		XFillRectangle(display, window, c->bg, box.x, box.y, box.width, box.height);
 		XDrawString(display, window, c->text, tpos.x, tpos.y, c->hex, HEX_STR_LEN);
 
-		if (height < 400)
+		if (((int)(height)) / 2 < (palette.count + 1) * (font->ascent + 5))
 			continue;
 
 		for (j = 0; j < palette.count; ++j) {
