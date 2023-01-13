@@ -282,7 +282,7 @@ h_client_message(XClientMessageEvent *ev)
 static void
 usage(void)
 {
-	puts("usage: xranco [-hv] [-l palette_file] [-n ncolors]");
+	puts("usage: xranco [-hv123456789] [-l palette_file]");
 	exit(0);
 }
 
@@ -309,7 +309,9 @@ main(int argc, char **argv)
 				case 'h': usage(); break;
 				case 'v': version(); break;
 				case 'l': --argc; loadpath = enotnull(*++argv, "path"); break;
-				case 'n': --argc; ncolors = atoi(enotnull(*++argv, "ncolors")); break;
+				case '1': case '2': case '3':
+				case '4': case '5': case '6':
+				case '7': case '8': case '9': ncolors = atoi(*argv + 1); break;
 				default: die("invalid option %s", *argv); break;
 			}
 		} else {
