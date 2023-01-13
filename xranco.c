@@ -177,6 +177,7 @@ add_color(unsigned long color)
 	c->text = XCreateGC(display, window, 0, NULL);
 
 	XSetFont(display, c->text, font->fid);
+	XSetFont(display, c->bg, font->fid);
 
 	set_color(palette.count - 1, color);
 }
@@ -225,7 +226,7 @@ h_expose(XExposeEvent *ev)
 	struct Color *c;
 	struct Rectangle box = { 0 };
 	struct Point tpos = { 0 };
-	int i, wavail;
+	int i, j, wavail;
 
 	if (ev->count != 0)
 		return;
@@ -244,6 +245,17 @@ h_expose(XExposeEvent *ev)
 
 		XFillRectangle(display, window, c->bg, box.x, box.y, box.width, box.height);
 		XDrawString(display, window, c->text, tpos.x, tpos.y, c->hex, HEX_STR_LEN);
+
+		if (height < 400)
+			continue;
+
+		for (j = 0; j < palette.count; ++j) {
+			if (j == i)
+				continue;
+			XDrawString(display, window, palette.colors[j].bg,
+					tpos.x, height - (j + 1 - (j > i)) * (font->ascent + 5),
+					palette.colors[j].hex, HEX_STR_LEN);
+		}
 	}
 }
 
