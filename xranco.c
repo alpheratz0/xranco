@@ -37,6 +37,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
@@ -190,14 +191,30 @@ create_palette(int count)
 		add_color(rand() & 0xffffff);
 }
 
+static int
+path_is_file(const char *path)
+{
+	struct stat sb;
+
+	if (stat(path, &sb) < 0 || !S_ISREG(sb.st_mode))
+		return 0;
+
+	return 1;
+}
+
 static void
 load_palette(const char *path)
 {
 	FILE *fp;
 	unsigned long color;
 
-	if (NULL == (fp = fopen(path, "r")))
+	if (strcmp(path, "-") == 0) {
+		fp = stdin;
+	} else if (!path_is_file(path)) {
+		die("not a file: %s", path);
+	} else if (NULL == (fp = fopen(path, "r"))) {
 		die("failed to open file %s: %s", path, strerror(errno));
+	}
 
 	while (palette.count < MAX_COLORS && fscanf(fp, "#%06lx\n", &color) == 1)
 		add_color(color & 0xffffff);
@@ -205,7 +222,8 @@ load_palette(const char *path)
 	if (palette.count == 0)
 		die("invalid file format");
 
-	fclose(fp);
+	if (fp != stdin)
+		fclose(fp);
 }
 
 static void
