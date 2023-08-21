@@ -307,13 +307,13 @@ main(int argc, char **argv)
 	while (++argv, --argc > 0) {
 		if ((*argv)[0] == '-' && (*argv)[1] != '\0' && (*argv)[2] == '\0') {
 			switch ((*argv)[1]) {
-				case 'h': usage(); break;
-				case 'v': version(); break;
-				case 'l': --argc; loadpath = enotnull(*++argv, "path"); break;
-				case '1': case '2': case '3':
-				case '4': case '5': case '6':
-				case '7': case '8': case '9': ncolors = atoi(*argv + 1); break;
-				default: die("invalid option %s", *argv); break;
+			case 'h': usage(); break;
+			case 'v': version(); break;
+			case 'l': --argc; loadpath = enotnull(*++argv, "path"); break;
+			case '1': case '2': case '3':
+			case '4': case '5': case '6':
+			case '7': case '8': case '9': ncolors = atoi(*argv + 1); break;
+			default: die("invalid option %s", *argv); break;
 			}
 		} else {
 			die("unexpected argument: %s", *argv);
@@ -329,10 +329,10 @@ main(int argc, char **argv)
 	while (1) {
 		XNextEvent(display, &ev);
 		switch (ev.type) {
-			case ClientMessage:     h_client_message(&ev.xclient); break;
-			case Expose:            h_expose(&ev.xexpose); break;
-			case ConfigureNotify:   h_configure(&ev.xconfigure); break;
-			case KeyPress:          h_keypress(&ev.xkey); break;
+		case ClientMessage:     h_client_message(&ev.xclient); break;
+		case Expose:            h_expose(&ev.xexpose); break;
+		case ConfigureNotify:   h_configure(&ev.xconfigure); break;
+		case KeyPress:          h_keypress(&ev.xkey); break;
 		}
 	}
 
