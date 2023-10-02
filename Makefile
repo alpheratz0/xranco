@@ -6,7 +6,7 @@ include config.mk
 all: xranco
 
 xranco: xranco.o
-	$(CC) $(LDFLAGS) -o xranco xranco.o $(LDLIBS)
+	$(CC) $(LDFLAGS) -o xranco xranco.o
 
 clean:
 	rm -f xranco xranco.o xranco-$(VERSION).tar.gz
